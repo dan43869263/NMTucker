@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
 import torch
 import numpy as np
-
+import pandas as pd
+from sklearn.model_selection import train_test_split
 
 def plot_loss(dic):
     plt.figure(figsize=(12,5))
@@ -245,3 +246,32 @@ def print_results(train_rmse_list, train_mae_list, train_mape_list,
           
     print('test mape', test_mape_list, '\n')
     print('mean test rmse and std. dev:', np.mean(test_mape_list), np.std(test_mape_list, ddof = 1), '\n')
+    
+
+    
+def load_dataset(name):
+
+    if name == 'sg':
+        #Load the POI dataset
+        df=pd.read_csv('./data/poi_clean.csv').drop(['Unnamed: 0'],axis=1)
+        df=df.drop_duplicates()
+        #setting the training and testing set
+        dtrain,dtest=train_test_split(df, test_size=0.1)
+        #dataset for costco
+        tr_idxs=dtrain.values[:,0:3]
+        tr_vals=dtrain.values[:,-1]
+        te_idxs=dtest.values[:,0:3]
+        te_vals=dtest.values[:,-1]
+        shape=(2321, 5596, 1600)
+        
+    elif name == 'netflix':
+        pass #fill this
+    
+    elif name == 'ccds':
+        pass
+    
+    else:
+        return "incorrect dataset name, try 'sg', 'netflix' or 'ccds'."
+    
+    return tr_idxs, tr_vals, te_idxs, te_vals, shape
+    

@@ -5,7 +5,6 @@ from experiment import Experiment
 import torch
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
 from pytorchtools import EarlyStopping
 import time
 import argparse
@@ -36,20 +35,14 @@ parser.add_argument("--validation_split", type=float, default=0.1, nargs="?",
                 help="validation split ratio")
 parser.add_argument("--model", type=str, default='ML1', nargs="?",
                 help="use which model:ML1,ML2,ML3")
+parser.add_argument("--dataset", type=str, default='sg', nargs="?",
+                help="'sg','netflix' or 'ccds'")
 args = parser.parse_args()
 
-#Load the POI dataset
-df=pd.read_csv('./poi_clean.csv').drop(['Unnamed: 0'],axis=1)
-df=df.drop_duplicates()
-#setting the training and testing set
-dtrain,dtest=train_test_split(df, test_size=0.1)
-#dataset for costco
-tr_idxs=dtrain.values[:,0:3]
-tr_vals=dtrain.values[:,-1]
-te_idxs=dtest.values[:,0:3]
-te_vals=dtest.values[:,-1]
-shape=(2321, 5596, 1600)
+
+tr_idxs, tr_vals, te_idxs, te_vals, shape = load_dataset(args.dataset)
    
+
 train_rmse_list = []
 train_mae_list = []
 train_mape_list = []
@@ -92,4 +85,4 @@ for i in range(10): # do the experiment 10 times
     test_mape_list.append(mape)
     
 print_results(train_rmse_list, train_mae_list, train_mape_list,
-                      test_rmse_list, test_mae_list, test_mape_list)
+              test_rmse_list, test_mae_list, test_mape_list) # print_results function is from utils.py

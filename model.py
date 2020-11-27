@@ -186,3 +186,63 @@ class ML3(torch.nn.Module):
         x = torch.bmm(w, G_mat) #b*1*d3 bmm b*d3*1=b*1*1
         pred = torch.squeeze(x)
         return pred
+
+
+class ML2_random_permute(torch.nn.Module): #this one is not complete yet
+    def __init__(self,shape,rank,core):
+        super(ML2_random_permute, self).__init__()
+        #Embedding module-initial three embedding matrix U1,V1,W1 in the first layer and the core tensor G1 in the first layer.
+        self.U1 = torch.nn.Embedding(rank[0], core[0], padding_idx=0).cuda() 
+        self.V1 = torch.nn.Embedding(rank[1], core[1], padding_idx=0).cuda()
+        self.W1 = torch.nn.Embedding(rank[2], core[2], padding_idx=0).cuda()
+        self.G1 = torch.nn.Parameter(torch.tensor(np.random.uniform(-1, 1, (core[0], core[1], core[2])), 
+                                     dtype=torch.float,
+                                     device="cuda", requires_grad=True))
+        
+        #Embedding moduke-initial three embedding matrix U,V,W in the second layer (output layer).
+        self.U = torch.nn.Embedding(shape[0], rank[0], padding_idx=0)
+        self.V = torch.nn.Embedding(shape[1], rank[1], padding_idx=0)
+        self.W = torch.nn.Embedding(shape[2], rank[2], padding_idx=0)
+
+        self.loss = torch.nn.MSELoss()
+        self.d1=rank[0]
+        self.d2=rank[1]
+        self.d3=rank[2]
+        self.rank=rank
+        self.core=core
+
+    def init(self):
+        xavier_normal_(self.U1.weight.data)
+        xavier_normal_(self.V1.weight.data)
+        xavier_normal_(self.W1.weight.data)
+        xavier_normal_(self.U.weight.data)
+        xavier_normal_(self.V.weight.data)
+        xavier_normal_(self.W.weight.data)
+   
+
+    def forward(self, u_idx, v_idx, w_idx):
+        #Embedding model -extract three embedding vectors (for here is three batches of vectors)
+        u = self.U(u_idx) 
+        u = u.view(-1,self.d1) #b*d1
+        v = self.V(v_idx)
+        v = v.view(-1,1,self.d2) #b*1*d2
+        w = self.W(w_idx)
+        w = w.view(-1,1,self.d3) #b*1*
+        
+        #reconstruct the core tensor G in the output layer (for more information see the section "Implicit Regularization with Multiple LayerRecursive NMTucker")
+        res=mode_dot(self.G1,self.U1.weight,0)
+        res=mode_dot(res,self.V1.weight,1)
+        G=mode_dot(res,self.W1.weight,2) #the reconstructed core tensor G in the output layer
+        
+        #Nonlinear Tucker multiplication module
+        x = torch.mm(u, G.reshape(self.d1,-1)) #b*d1 mm d1*(d2*d3) = b*(d2*d3)
+        x = torch.nn.functional.sigmoid(x) #the first non-linear activation function, for others like ReLU use torch.nn.functional.relu_()
+        x = x.view(-1,self.d2,self.d3) # b*d2*d3
+   
+        G_mat = torch.bmm(v,x) #b*1*d2 bmm b*d2*d3 = b*1*d3
+        G_mat = torch.nn.functional.sigmoid(G_mat)# the second non-linear activation function
+        G_mat = G_mat.view(-1,self.d3,1) #b*d3*1
+
+        x = torch.bmm(w, G_mat) #b*1*d3 bmm b*d3*1=b*1*1
+        pred = torch.squeeze(x)
+        return pred

@@ -1,4 +1,5 @@
 from costco_utils import *
+from utils import *
 import tensorflow.compat.v1 as tf
 import keras as k
 import pandas as pd
@@ -7,20 +8,12 @@ import argparse
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("--rank", type=int, default= 20, help= "rank")
+parser.add_argument("--dataset", type=str, default='sg', nargs="?",
+                help="'sg','netflix' or 'ccds'")
+
 args = parser.parse_args()
 
-
-#Load the POI dataset
-df=pd.read_csv('./poi_clean.csv').drop(['Unnamed: 0'],axis=1)
-df=df.drop_duplicates()
-#setting the training and testing set
-dtrain,dtest=train_test_split(df, test_size=0.1)
-#dataset for costco
-tr_idxs=dtrain.values[:,0:3]
-tr_vals=dtrain.values[:,-1]
-te_idxs=dtest.values[:,0:3]
-te_vals=dtest.values[:,-1]
-shape=(2321, 5596, 1600)
+tr_idxs, tr_vals, te_idxs, te_vals, shape = load_dataset(args.dataset)
 
 train_rmse_list = []
 train_mae_list = []
@@ -29,7 +22,7 @@ test_rmse_list = []
 test_mae_list = []
 test_mape_list = []
 
-for i in range(2):
+for i in range(2): # Do the experiment 10 times
     
     lr = 1e-4
     epochs = 50
