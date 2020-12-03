@@ -12,31 +12,30 @@ import matplotlib.pyplot as plt
 torch.cuda.is_available() #check cuda
 
 import argparse
-
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument("--num_iterations", type=int, default=200, nargs="?", help="Number of iterations.")
 
-parser.add_argument("--num_iterations", type=int, default=200, nargs="?",
-                help="Number of iterations.")
-parser.add_argument("--patience", type=int, default=5, nargs="?",
-                help="patience for early stop.")
-parser.add_argument("--batch_size", type=int, default=256, nargs="?",
-                help="Batch size.")
-parser.add_argument("--lr", type=float, default=1e-4, nargs="?",
-                help="Learning rate.")
-parser.add_argument("--rank", default=(5,5,5), nargs="?",
+parser.add_argument("--patience", type=int, default=5, nargs="?",help="patience for early stop.")
+
+parser.add_argument("--batch_size", type=int, default=256, nargs="?", help="Batch size.")
+
+parser.add_argument("--lr", type=float, default=1e-4, nargs="?", help="Learning rate.")
+
+parser.add_argument("--rank", type = int, default=(5,5,5), nargs="+",
                 help="For NMTucker-L1, NMTUcker-L2, NMtucker-L3, rank is the shape of core tensor G in the output layer.")
-parser.add_argument("--core", default=(3,3,3), nargs="?",
+parser.add_argument("--core", type = int, default=(3,3,3), nargs="+",
                 help="For NMTucker-L2 core is the shape of core tensor G1 in the first layer. For NMTucker-L3, core is the shape of core tensor G2 in the second layer")
-parser.add_argument("--ccore", default=(4,4,4), nargs="?",
+
+parser.add_argument("--ccore", type = int, default=(4,4,4), nargs="+",
                 help="For NMTucker-L3, ccore is the shape of the core tensor G1 in the first layer")
-parser.add_argument("--cuda", type=bool, default=True, nargs="?",
-                help="Whether to use cuda (GPU) or not (CPU).")  
-parser.add_argument("--validation_split", type=float, default=0.1, nargs="?",
-                help="validation split ratio")
-parser.add_argument("--model", type=str, default='ML1', nargs="?",
-                help="use which model:ML1,ML2,ML3")
-parser.add_argument("--dataset", type=str, default='sg', nargs="?",
-                help="'sg','netflix' or 'ccds'")
+
+parser.add_argument("--cuda", type=bool, default=True, nargs="?", help="Whether to use cuda (GPU) or not (CPU).")
+
+parser.add_argument("--validation_split", type=float, default=0.1, nargs="?", help="validation split ratio")
+
+parser.add_argument("--model", type=str, default='ML1', nargs="?", help="use which model:ML1,ML2,ML3")
+
+parser.add_argument("--dataset", type=str, default='sg', nargs="?", help="'sg','netflix' or 'ccds'")
 args = parser.parse_args()
 
 
@@ -57,9 +56,9 @@ for i in range(10): # do the experiment 10 times
                     batch_size = args.batch_size,
                     learning_rate = args.lr, 
                     shape = shape,
-                    rank = args.rank,
-                    core = args.core,
-                    ccore = args.ccore,
+                    rank = tuple(args.rank),
+                    core = tuple(args.core),
+                    ccore = tuple(args.ccore),
                     cuda = args.cuda,
                     model = args.model,
                     patience = args.patience,
